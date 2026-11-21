@@ -1,4 +1,4 @@
-import { Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { Timestamp, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import { logger } from '../utils/logger';
 
 export interface RateLimitDecision {
@@ -70,7 +70,7 @@ export function createFirestoreRateLimitStore(firestore: Firestore): RateLimitSt
   return {
     async increment(key, windowStartSeconds) {
       const ref = firestore.collection('rateLimits').doc(key);
-      return firestore.runTransaction(async (tx) => {
+      return firestore.runTransaction(async (tx: Transaction) => {
         const snapshot = await tx.get(ref);
         const current = snapshot.exists ? Number(snapshot.get('count') ?? 0) : 0;
         const next = current + 1;

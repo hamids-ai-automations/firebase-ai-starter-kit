@@ -30,13 +30,19 @@ jobs:
           cache: npm
 
       - name: Install root tooling
-        run: npm install --no-audit --no-fund
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
 
       - name: Install apps/web
-        run: npm install --prefix apps/web --no-audit --no-fund
+        run: |
+          rm -f apps/web/package-lock.json
+          npm install --prefix apps/web --no-audit --no-fund
 
       - name: Install functions
-        run: npm install --prefix functions --no-audit --no-fund
+        run: |
+          rm -f functions/package-lock.json
+          npm install --prefix functions --no-audit --no-fund
 
       - name: Secret scan
         run: npm run check:secrets
@@ -74,6 +80,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          rm -f package-lock.json apps/web/package-lock.json functions/package-lock.json
           npm install --no-audit --no-fund
           npm install --prefix apps/web --no-audit --no-fund
           npm install --prefix functions --no-audit --no-fund

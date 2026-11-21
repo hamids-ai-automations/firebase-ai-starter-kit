@@ -1,4 +1,10 @@
-import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import {
+  FieldValue,
+  Timestamp,
+  type Firestore,
+  type QueryDocumentSnapshot,
+  type Transaction,
+} from 'firebase-admin/firestore';
 import { notFound, permissionDenied } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -74,7 +80,7 @@ export async function appendMessage(
 
   const messageRef = conversationRef.collection('messages').doc();
 
-  await firestore.runTransaction(async (tx) => {
+  await firestore.runTransaction(async (tx: Transaction) => {
     const snapshot = await tx.get(conversationRef);
     if (!snapshot.exists) throw notFound('Conversation not found.');
 
@@ -114,7 +120,7 @@ export async function getRecentMessages(
     .get();
 
   return snapshot.docs
-    .map((doc) => {
+    .map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       return {
         role: (data.role === 'model' ? 'model' : 'user') as 'user' | 'model',
