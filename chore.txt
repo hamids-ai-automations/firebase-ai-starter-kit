@@ -1,1 +1,0 @@
-docs: record CI green state and remediation log
