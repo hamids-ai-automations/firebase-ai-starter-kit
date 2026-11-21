@@ -7,16 +7,27 @@ _Last updated: 2026-11-21_
 
 ## Summary
 
-| Item                        | State                             | Notes                                                                      |
-| --------------------------- | --------------------------------- | -------------------------------------------------------------------------- |
-| Source code                 | Complete                          | `apps/web` (React 19 + Vite), `functions` (Node 22, firebase-functions v2) |
-| Automated checks            | Green locally                     | `npm run verify`, `npm run test:rules`, `npm run test:emulator`            |
-| CI pipeline                 | Committed, not yet observed green | `.github/workflows/ci.yml` runs on the first push to `main`                |
-| Firestore rules + indexes   | Written and unit-tested           | `firestore/rules.test.ts` (22 assertions)                                  |
-| Gemini integration          | Implemented, mock-tested          | Real calls need `GEMINI_API_KEY`; `AI_MOCK_MODE=true` for tests            |
-| Firebase Hosting deployment | **Blocked**                       | Requires a Firebase project on the Blaze plan and repository secrets       |
-| Public demo URL             | Not available                     | No project has been linked to this repository yet                          |
-| Portfolio project page      | **Blocked**                       | Depends on the Hosting deployment                                          |
+| Item                        | State                    | Notes                                                                                                    |
+| --------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Source code                 | Complete                 | `apps/web` (React 19 + Vite), `functions` (Node 22, firebase-functions v2)                               |
+| Automated checks            | Green locally            | `npm run verify`, `npm run test:rules`, `npm run test:emulator`                                          |
+| CI pipeline                 | **Green on main**        | Actions run 44888117515: Verify (Node 22), Verify (Node 24), Firestore rules + emulator smoke all passed |
+| Firestore rules + indexes   | Written and unit-tested  | `firestore/rules.test.ts` (22 assertions)                                                                |
+| Gemini integration          | Implemented, mock-tested | Real calls need `GEMINI_API_KEY`; `AI_MOCK_MODE=true` for tests                                          |
+| Firebase Hosting deployment | **Blocked**              | Requires a Firebase project on the Blaze plan and repository secrets                                     |
+| Public demo URL             | Not available            | No project has been linked to this repository yet                                                        |
+| Portfolio project page      | **Blocked**              | Depends on the Hosting deployment                                                                        |
+
+## CI remediation log (2026-11-21)
+
+| Issue                                                                               | Fix                                             |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `lib/` ignore rule excluded `apps/web/src/lib` and `functions/src/lib/admin.ts`     | Ignores scoped to `/lib/` and `/functions/lib/` |
+| `firebase: not found` in rules job                                                  | `npm install -g firebase-tools@latest` step     |
+| `npm ci` failed on Linux (Windows lockfile lacks `@rolldown/binding-linux-x64-gnu`) | Lockfiles dropped before install on runners     |
+| npm 10 `edgesOut` crash on Node 20                                                  | Matrix raised to Node 22 / 24, `engines` bumped |
+| TS7006 implicit `any` in `Transaction`/`QueryDocumentSnapshot` callbacks            | Explicit Firebase types                         |
+| Callable smoke tests returned 404 (no `functions/lib` on clean clone)               | `pretest:emulator` builds functions first       |
 
 ## Verification evidence
 
