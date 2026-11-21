@@ -51,8 +51,9 @@ shipped bundle; Gemini is called over REST with the user's key (see
   unit tests with mocked responses. Adding a personal key in the Setup tab exercises them.
 - **Cloud Functions.** Not deployable on Spark; the Blaze runbook in
   [`docs/deployment.md`](docs/deployment.md) is unchanged and ready.
-- **Firestore emulator suite in this cycle.** `npm run test:rules` needs Java 21 and was not re-run;
-  rules were validated by deployment (`firebase deploy` compiles the ruleset before release).
+- **Firestore emulator suite.** Verified: `npm run test:rules` passes 33/33 against the Spark ruleset
+  (local JDK 21 and the CI `Firestore rules + emulator smoke` job), and
+  `AI_MOCK_MODE=true npm run test:emulator` passes 14/14 checks.
 
 ## How to go fully production (Blaze)
 

@@ -4,14 +4,14 @@ Cycle: 2026-11-21 — Spark-mode deployment of the client-side build.
 
 ## Automated checks (local, now passing)
 
-| Check                        | Command                 | Result                                                                                     |
-| ---------------------------- | ----------------------- | ------------------------------------------------------------------------------------------ |
-| TypeScript (web + functions) | `npm run typecheck`     | Pass                                                                                       |
-| Lint                         | `npm run lint`          | Pass, 0 warnings                                                                           |
-| Unit tests                   | `npm run test:unit`     | **51 passed**, 5 files                                                                     |
-| Production build             | `npm run build:web`     | Pass — `apps/web/dist`, ≈0.9 MB JS                                                         |
-| Secrets scan                 | `npm run check:secrets` | Pass                                                                                       |
-| Firestore rules tests        | `npm run test:rules`    | Not run this cycle (needs Java 21); ruleset compiled successfully during `firebase deploy` |
+| Check                        | Command                 | Result                             |
+| ---------------------------- | ----------------------- | ---------------------------------- |
+| TypeScript (web + functions) | `npm run typecheck`     | Pass                               |
+| Lint                         | `npm run lint`          | Pass, 0 warnings                   |
+| Unit tests                   | `npm run test:unit`     | **51 passed**, 5 files             |
+| Production build             | `npm run build:web`     | Pass — `apps/web/dist`, ≈0.9 MB JS |
+| Secrets scan                 | `npm run check:secrets` | Pass                               |
+| Firestore rules tests        | `npm run test:rules`    | 33/33 pass (local JDK 21 + CI)     |
 
 Defect found and fixed during this cycle: `normalizeError` unit test constructed `ApiError` with
 positional arguments, so the missing-key branch never matched. Test now passes
@@ -41,3 +41,4 @@ Target: <https://fb-ai-starter-kit.web.app>
 - Gemini generation not exercised against the live deployment (no key supplied by design).
 - Blaze-mode functions untested end to end this cycle; covered by 14 emulator smoke checks in CI.
 - Lighthouse was not run; the page is a single small bundle with no blocking third-party requests.
+- Emulator smoke (`AI_MOCK_MODE=true npm run test:emulator`): 14/14 checks pass.
