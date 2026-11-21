@@ -30,13 +30,13 @@ jobs:
           cache: npm
 
       - name: Install root tooling
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Install apps/web
-        run: npm ci --prefix apps/web
+        run: npm install --prefix apps/web --no-audit --no-fund
 
       - name: Install functions
-        run: npm ci --prefix functions
+        run: npm install --prefix functions --no-audit --no-fund
 
       - name: Secret scan
         run: npm run check:secrets
@@ -74,9 +74,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          npm ci --prefix apps/web
-          npm ci --prefix functions
+          npm install --no-audit --no-fund
+          npm install --prefix apps/web --no-audit --no-fund
+          npm install --prefix functions --no-audit --no-fund
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@latest

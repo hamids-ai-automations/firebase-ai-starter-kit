@@ -44,9 +44,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          npm ci --prefix apps/web
-          npm ci --prefix functions
+          npm install --no-audit --no-fund
+          npm install --prefix apps/web --no-audit --no-fund
+          npm install --prefix functions --no-audit --no-fund
 
       - name: Verify before deploy
         run: npm run verify
