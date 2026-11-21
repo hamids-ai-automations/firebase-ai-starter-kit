@@ -6,7 +6,8 @@ node_modules/
 # builds
 dist/
 dist-ssr/
-lib/
+/functions/lib/
+/lib/
 *.tsbuildinfo
 
 # environment & secrets
