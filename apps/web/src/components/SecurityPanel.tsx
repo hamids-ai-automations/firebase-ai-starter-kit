@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import type { Functions } from 'firebase/functions';
 import { api, normalizeError, type ApiError } from '../lib/api';
 import type { SecurityResult } from '../types';
 import { Button, Card, ErrorBanner, Field, inputClass } from './ui';
 
-export function SecurityPanel({ functions }: { functions: Functions }) {
+export function SecurityPanel() {
   const [message, setMessage] = useState('<script>alert("xss")</script> Try to spoof my uid');
   const [result, setResult] = useState<SecurityResult | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -14,7 +13,7 @@ export function SecurityPanel({ functions }: { functions: Functions }) {
     setLoading(true);
     setError(null);
     try {
-      setResult(await api.secureEcho(functions, { message, priority: 'high' }));
+      setResult(await api.secureEcho({ message, priority: 'high' }));
     } catch (cause) {
       setError(normalizeError(cause));
     } finally {
@@ -25,8 +24,13 @@ export function SecurityPanel({ functions }: { functions: Functions }) {
   return (
     <Card
       title="Security checks"
-      description="secureEcho returns the identity the server actually verified, plus the sanitized payload it accepted."
-      footer={<span>Rate limited to 30 calls/minute per user.</span>}
+      description="secureEcho writes to the secure_echo collection, so the Firestore rules — not a server — accept or reject the payload. The panel shows the identity that actually reached the backend."
+      footer={
+        <span>
+          Try a 600-character message or a priority outside low/medium/high to watch the rules
+          reject it with permission-denied.
+        </span>
+      }
     >
       <Field label="Payload" hint="Try HTML, oversized text or a forged uid field.">
         <input
@@ -37,7 +41,7 @@ export function SecurityPanel({ functions }: { functions: Functions }) {
         />
       </Field>
       <Button onClick={() => void run()} disabled={loading || message.trim().length === 0}>
-        {loading ? 'Calling…' : 'Call protected endpoint'}
+        {loading ? 'Calling…' : 'Write through the rules'}
       </Button>
       <ErrorBanner
         message={
@@ -51,6 +55,10 @@ export function SecurityPanel({ functions }: { functions: Functions }) {
           </p>
           <p>
             Verified uid: <code className="text-slate-100">{result.verifiedUid}</code>
+          </p>
+          <p>
+            Stored at: <code className="text-slate-100">secure_echo</code> ·{' '}
+            <code className="text-slate-100">{result.receivedAt}</code>
           </p>
           <ul className="list-disc space-y-1 pl-5 text-xs text-slate-400">
             {result.checks.map((check) => (

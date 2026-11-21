@@ -1,5 +1,8 @@
 # Deployment
 
+> **Free plan first.** To deploy without a billing account (Hosting + Firestore + Auth only), follow
+> [`FREE_PLAN_DEPLOYMENT.md`](FREE_PLAN_DEPLOYMENT.md). This document covers the Blaze-mode runbook.
+
 > Deployment is deliberately manual. The repository never deploys on push; every production release
 > is an explicit, reviewed action.
 

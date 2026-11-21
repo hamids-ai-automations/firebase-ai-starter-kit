@@ -1,20 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { Functions } from 'firebase/functions';
-import { doc, getDoc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { api, normalizeError, type ApiError } from '../lib/api';
 import type { UsageSummary } from '../types';
 import { Button, Card, ErrorBanner, Field, inputClass } from './ui';
 
-export function ProfilePanel({
-  functions,
-  db,
-  uid,
-}: {
-  functions: Functions;
-  db: Firestore;
-  uid: string;
-}) {
+export function ProfilePanel({ db, uid }: { db: Firestore; uid: string }) {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
@@ -25,13 +16,16 @@ export function ProfilePanel({
   const load = async () => {
     setError(null);
     try {
-      const snapshot = await getDoc(doc(db, `users/${uid}`));
+      const snapshot = await getDoc(doc(db, 'users', uid));
       if (snapshot.exists()) {
         const data = snapshot.data();
         setDisplayName(typeof data.displayName === 'string' ? data.displayName : '');
         setBio(typeof data.bio === 'string' ? data.bio : '');
+      } else {
+        // First visit: let the rules-visible document exist before any update.
+        await api.ensureProfile();
       }
-      setUsage(await api.usageSummary(functions));
+      setUsage(await api.usageSummary());
     } catch (cause) {
       setError(normalizeError(cause));
     }
@@ -47,8 +41,8 @@ export function ProfilePanel({
     setStatus(null);
     setError(null);
     try {
-      await api.updateProfile(functions, { displayName, bio });
-      setStatus('Profile saved.');
+      const { updated } = await api.updateProfile({ displayName, bio });
+      setStatus(`Profile saved (${updated.join(', ')}).`);
       await load();
     } catch (cause) {
       setError(normalizeError(cause));
@@ -60,9 +54,12 @@ export function ProfilePanel({
   return (
     <Card
       title="Profile and usage"
-      description="Firestore rules allow you to edit only displayName and bio on your own profile document."
+      description="Firestore rules allow you to edit only displayName, bio and preferences on your own profile document."
       footer={
-        <span>Usage counters are server-owned: clients can read them but never write them.</span>
+        <span>
+          Usage events are append-only in your own subcollection: readable by you, writable by you,
+          never shared with another uid.
+        </span>
       }
     >
       <Field label="Display name">
@@ -74,7 +71,7 @@ export function ProfilePanel({
           placeholder="Your name"
         />
       </Field>
-      <Field label="Bio" hint="Maximum 280 characters (enforced in rules and in the callable).">
+      <Field label="Bio" hint="Maximum 280 characters (enforced in rules and on the client).">
         <textarea
           className={`${inputClass} min-h-20 resize-y`}
           value={bio}
@@ -96,6 +93,11 @@ export function ProfilePanel({
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-slate-200">AI usage</h3>
+        {usage ? (
+          <p className="text-xs text-slate-500">
+            {usage.totalEvents ?? 0} events recorded (counted with a Firestore count() aggregation).
+          </p>
+        ) : null}
         {usage && usage.months.length > 0 ? (
           <ul className="space-y-1 text-sm text-slate-300">
             {usage.months.map((month) => (

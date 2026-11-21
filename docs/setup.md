@@ -1,5 +1,8 @@
 # Setup
 
+> **No billing account?** Start with [`FREE_PLAN_DEPLOYMENT.md`](FREE_PLAN_DEPLOYMENT.md) — same steps,
+> minus Cloud Functions. The Blaze setup below adds the server-side variant.
+
 ## 0. Checklist
 
 - [ ] Node.js 20.19+ (22.x recommended) and npm 10+

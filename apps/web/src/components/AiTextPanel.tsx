@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import type { Functions } from 'firebase/functions';
 import { api, normalizeError, type ApiError } from '../lib/api';
 import type { TextResult } from '../types';
 import { Badge, Button, Card, ErrorBanner, Field, inputClass } from './ui';
 
-export function AiTextPanel({ functions }: { functions: Functions }) {
+export function AiTextPanel() {
   const [prompt, setPrompt] = useState(
     'Explain Firestore security rules to a junior developer in 3 sentences.',
   );
@@ -19,7 +18,7 @@ export function AiTextPanel({ functions }: { functions: Functions }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.generateText(functions, {
+      const data = await api.generateText({
         prompt,
         systemInstruction: systemInstruction.trim() || undefined,
       });
@@ -34,7 +33,7 @@ export function AiTextPanel({ functions }: { functions: Functions }) {
   return (
     <Card
       title="Text generation"
-      description="Calls the aiGenerateText callable. The model runs server-side, so no API key is exposed to this page."
+      description="Calls the Gemini REST API straight from this tab with the key you saved in Setup. No Cloud Functions are involved."
       footer={
         result ? (
           <span>
@@ -43,7 +42,8 @@ export function AiTextPanel({ functions }: { functions: Functions }) {
           </span>
         ) : (
           <span>
-            Prompt is validated server-side (length, model allow-list, temperature range).
+            Prompt length is validated on the client (max 8000 chars) and the key never leaves this
+            tab.
           </span>
         )
       }
@@ -75,6 +75,12 @@ export function AiTextPanel({ functions }: { functions: Functions }) {
           error ? `${error.message}${error.code !== 'unknown' ? ` (${error.code})` : ''}` : null
         }
       />
+      {error?.code === 'gemini-key-missing' ? (
+        <p className="text-sm text-amber-300">
+          Open the <strong>Setup</strong> tab and paste your Gemini API key — it is kept in this
+          tab&apos;s sessionStorage only.
+        </p>
+      ) : null}
       {result ? (
         <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">
           {result.text}

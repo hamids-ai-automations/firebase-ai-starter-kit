@@ -4,13 +4,21 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node 22+](https://img.shields.io/badge/node-22%2B%20%7C%2024.x-brightgreen.svg)](package.json)
 
-A production-minded starter kit for building **secure, server-side Gemini AI features on Firebase**.
-It ships a working React demo, hardened Firestore rules, reusable Cloud Functions, strict input
-validation, rate limiting, and an emulator-first developer workflow — so you can start from a
-codebase that is already wired for authentication, data ownership, and API key safety.
+A production-minded starter kit for building **Gemini AI features on Firebase** — real authentication,
+owner-scoped Firestore rules, strict validation, an emulator-first workflow, and a working React demo
+instead of a snippet collection.
 
-- **Live demo:** _deployment pending — see [Deployment status](DEPLOYMENT_STATUS.md)_
-- **Project page:** https://marvis.web.app/projects/firebase-ai-starter-kit/ _(deployment pending)_
+It ships in two interchangeable deployment modes. The default build targets the **free Spark plan**;
+the same endpoints also exist as server-side Cloud Functions for teams that want the key off the client.
+
+| Mode                                   | Gemini calls run                                                   | Billing             | Status                                                    |
+| -------------------------------------- | ------------------------------------------------------------------ | ------------------- | --------------------------------------------------------- |
+| **Spark mode** (default build)         | In the browser via REST, using the signed-in user's own API key     | None — no Blaze     | **Live:** <https://fb-ai-starter-kit.web.app>              |
+| **Blaze mode** (`functions/` variant)  | Inside Cloud Functions 2nd gen, key held as a server-only secret    | Blaze plan required | Reference implementation, deployed on demand               |
+
+- **Live demo (Spark):** <https://fb-ai-starter-kit.web.app>
+- **Project page:** <https://marvis.web.app/projects/firebase-ai-starter-kit>
+- **Spark deployment guide:** [`docs/FREE_PLAN_DEPLOYMENT.md`](docs/FREE_PLAN_DEPLOYMENT.md)
 - **Documentation:** [`docs/`](docs/) — architecture, setup, API reference, security, testing, deployment
 
 ---
@@ -46,14 +54,23 @@ codebase that is already wired for authentication, data ownership, and API key s
 
 ## 1. Project introduction
 
-Most "AI + Firebase" samples put a Gemini API key in the browser, skip Firestore rules, and stop at
-a single prototype file. This kit takes the opposite approach: **the model is never called from the
-client**. The browser talks to authenticated callable functions, the functions validate every field
-with Zod, enforce per-user rate limits, call Gemini with a server-only key, and persist conversation
-history under per-user paths guarded by tested security rules.
+Most "AI + Firebase" samples skip Firestore rules, trust the client to police its own data, and stop
+at a single prototype file. This kit is built around the parts that decide whether an AI feature
+survives real users: **who may read a document, what happens when the model returns malformed JSON,
+where the API key lives, and how any of it is tested before production.**
 
-The result is a small but complete reference application you can fork, delete the demo panels, and
-keep building on.
+The kit deliberately implements the same product through two back ends:
+
+- **Spark mode** — the browser calls Gemini REST directly with a key the user supplies in the Setup
+  tab. The key lives in `sessionStorage` for that tab only: never committed, never bundled, never
+  written to Firestore. This mode needs no billing account, and it is what runs at
+  <https://fb-ai-starter-kit.web.app>.
+- **Blaze mode** — the same endpoints as Cloud Functions 2nd gen: Zod validation, per-user rate
+  limits, server-only `GEMINI_API_KEY`, conversation persistence. Kept in `functions/` as the
+  production upgrade path.
+
+Both modes share one contract (`apps/web/src/lib/api.ts` keeps the original callable-shaped function
+names), so switching modes is a configuration change, not a rewrite.
 
 ## 2. Problem statement
 
@@ -61,7 +78,7 @@ Building an AI feature on Firebase usually raises the same five problems:
 
 | Problem                  | Typical shortcut                                     | What this kit does                                                                         |
 | ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| API key exposure         | Key inlined into the web bundle                      | Key stored as a Cloud Functions secret, never shipped to the client                        |
+| API key exposure         | Key inlined into the production bundle               | Spark mode: user-supplied key kept in `sessionStorage` only. Blaze mode: server-only secret  |
 | Unbounded cost           | No limits on prompt size, history, or call frequency | Zod length caps, message-history caps, Firestore-backed per-user rate limits               |
 | Data leakage             | Shared collection with client-side filtering         | `users/{uid}/**` ownership rules, enforced and unit-tested                                 |
 | Unvalidated model output | Raw JSON parsed in the UI                            | Schema-constrained structured output validated before it reaches React                     |
@@ -131,7 +148,13 @@ flowchart LR
   AIS --> FS
 ```
 
-Request path for an AI call:
+> **Spark mode difference.** In the default build the `Cloud Functions v2` box above is not deployed.
+> The browser keeps the same API surface but calls `generativelanguage.googleapis.com/v1beta`
+> directly with the user's key, and writes conversation history to Firestore under the same rules.
+> The diagram describes Blaze mode; see [`docs/FREE_PLAN_DEPLOYMENT.md`](docs/FREE_PLAN_DEPLOYMENT.md)
+> for the client-side request path.
+
+Request path for an AI call (Blaze mode):
 
 1. The React panel calls a callable function with the user's ID token.
 2. Middleware verifies authentication (and App Check when configured), then parses the payload with a
@@ -170,11 +193,21 @@ captured from the running application against the emulator suite — no mock-ups
 A screenshot of the dashboard is rendered by signing a throwaway account up against the Auth
 emulator; the AI responses visible on it come from `AI_MOCK_MODE=true`, not a billed Gemini call.
 
+Captured from the live Spark deployment (<https://fb-ai-starter-kit.web.app>), signed in with a
+throwaway account and no Gemini key configured:
+
+| Live sign-in                                   | Live dashboard (six panels)                     |
+| ---------------------------------------------- | ----------------------------------------------- |
+| ![Sign-in](docs/screenshots/shot-auth.png)     | ![Dashboard](docs/screenshots/shot-dashboard.png) |
+
+Mobile layout of the same deployment: ![Mobile](docs/screenshots/shot-mobile.png)
+
 ## 7. Prerequisites
 
 - Node.js **22.x or 24.x** (the Functions runtime is Node 22) and npm 10+
 - Java **21** for the Firestore emulator
-- A Firebase project on the Blaze plan (Cloud Functions v2 requires it)
+- A Firebase project — the free **Spark** plan is enough for the default build; Cloud Functions v2
+  (`functions/`) requires the Blaze plan
 - A Gemini API key from Google AI Studio
 - Firebase CLI (`npm i -g firebase-tools`) — or use `npx firebase-tools`
 
@@ -309,34 +342,42 @@ users/{uid}
 
 Rules at a glance:
 
-- Users can read their own profile and write only user-editable fields.
-- `usage/*` is read-only for clients — only Cloud Functions may write it.
-- Conversations and messages are readable/writable only by their owner; counters and timestamps are
-  server-managed.
+- Every path is owner-scoped: `request.auth.uid` must equal the `{uid}` segment, and `list` is gated
+  the same way, so collections cannot be enumerated.
+- Profiles accept only user-editable fields on update (`displayName`, `bio`, `preferences`,
+  `updatedAt`); `role` can never be escalated and profiles cannot be deleted.
+- Messages are **append-only** (no update, delete allowed), conversation counters must be
+  non-decreasing, and both are length-capped.
+- `usage_events` is append-only and immutable once written; in Spark mode the authenticated owner
+  writes its own events, and every field is validated against the call it claims to describe.
+- `rateLimits/*` is unreadable and unwritable by clients — in Blaze mode it belongs to the server
+  only. Everything else falls through to a deny-all rule.
 
 Full rules: [`firestore/firestore.rules`](firestore/firestore.rules). Indexes:
 [`firestore/firestore.indexes.json`](firestore/firestore.indexes.json).
 
 ## 15. Gemini integration guide
 
-```ts
-import { getFunctions, httpsCallable } from 'firebase/functions';
+One call site, two implementations:
 
-const generate = httpsCallable(functions, 'aiGenerateText');
-const { data } = await generate({ prompt: 'Explain Firestore rules in 3 bullets.' });
-console.log(data.text);
+```ts
+// identical in both modes — apps/web/src/lib/api.ts owns the difference
+import { generateText } from './lib/api';
+
+const { text } = await generateText({ prompt: 'Explain Firestore rules in 3 bullets.' });
+console.log(text);
 ```
 
-Three entry points, all server-side:
+| Endpoint               | Purpose                 | Spark mode (client)                    | Blaze mode (functions)              | Highlights                                                     |
+| ---------------------- | ----------------------- | -------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
+| `generateText`         | One-shot completion     | Gemini REST with the user's key        | `aiGenerateText` callable           | Optional system instruction, temperature, token cap            |
+| `chat`                 | Multi-turn conversation | REST + Firestore writes under rules    | `aiChat` callable                   | Persists history, caps history length, returns conversation id |
+| `generateStructured`   | Schema-constrained JSON | `responseSchema` + Zod re-validation   | `aiGenerateStructured` callable     | Returns a validated `ArticleBrief` object                      |
+| `usageSummary`         | Usage readout           | Firestore `count()` / `sum()` aggregation | `aiUsageSummary` callable        | No unbounded reads                                             |
 
-| Endpoint               | Purpose                 | Highlights                                                     |
-| ---------------------- | ----------------------- | -------------------------------------------------------------- |
-| `aiGenerateText`       | One-shot completion     | Optional system instruction, temperature, token cap            |
-| `aiChat`               | Multi-turn conversation | Persists history, caps history length, returns conversation id |
-| `aiGenerateStructured` | Schema-constrained JSON | Returns a validated `ArticleBrief` object                      |
-
-`aiGenerateStructured` uses Gemini response schemas so the model cannot return free-form JSON, and
-the result is re-validated with Zod on the server.
+`generateStructured` uses a Gemini response schema so the model cannot return free-form JSON, and the
+result is re-validated with Zod before it reaches React — in both modes. Errors share one envelope
+(`{ code, message }`), so panel error handling does not branch on the mode.
 
 ## 16. Cloud Functions guide
 
@@ -390,6 +431,22 @@ Test strategy and CI details: [`docs/testing.md`](docs/testing.md).
 
 ## 19. Deployment
 
+### Spark mode — no billing account
+
+```bash
+firebase login
+firebase use --add                       # select your Spark project
+npm run build:web                        # builds apps/web/dist with .env.production
+firebase deploy --only hosting:web
+firebase deploy --only firestore:rules
+```
+
+Live result of exactly this sequence: <https://fb-ai-starter-kit.web.app>. Step-by-step console
+clicks, the Firestore/Auth setup, the hosting target wiring and the post-deploy verification:
+[`docs/FREE_PLAN_DEPLOYMENT.md`](docs/FREE_PLAN_DEPLOYMENT.md).
+
+### Blaze mode — server-side functions
+
 ```bash
 firebase login
 firebase use --add                  # select your project
@@ -425,13 +482,15 @@ MIT — see [`LICENSE`](LICENSE).
 
 ## 23. Roadmap
 
-See [`ROADMAP.md`](ROADMAP.md). Near-term items: streaming responses, App Check enforcement in
-production, multi-model routing, and a hosted live demo.
+See [`ROADMAP.md`](ROADMAP.md). Shipped: the hosted live demo on the Spark plan (2026-11-21).
+Near-term: streaming responses, App Check enforcement, multi-model routing, and the Blaze deployment
+of the server-side variant.
 
 ## 24. Project links
 
 - Repository: https://github.com/hamids-ai-automations/firebase-ai-starter-kit
-- Project page (Marvis): https://marvis.web.app/projects/firebase-ai-starter-kit/
+- Live demo (Spark plan): https://fb-ai-starter-kit.web.app
+- Project page (Marvis): https://marvis.web.app/projects/firebase-ai-starter-kit
 - Documentation: [`docs/`](docs/)
 - Author: Muhammad Hamid — https://github.com/hamids-ai-automations
 - Contact: https://wa.me/923167417135

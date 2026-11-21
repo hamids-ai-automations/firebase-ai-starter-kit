@@ -49,6 +49,8 @@ export interface SecurityResult {
 }
 
 export interface UsageSummary {
+  /** Total number of usage events, from a Firestore count() aggregation. */
+  totalEvents?: number;
   months: Array<{
     id: string;
     month?: string;

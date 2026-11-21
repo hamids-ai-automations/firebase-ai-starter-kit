@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import type { Functions } from 'firebase/functions';
 import { api, normalizeError, type ApiError } from '../lib/api';
 import type { StructuredResult } from '../types';
 import { Badge, Button, Card, ErrorBanner, Field, inputClass } from './ui';
 
 const placeholder =
-  'Write a short editorial brief about migrating an existing REST + MongoDB app to Firebase Auth, Firestore and callable functions.';
+  'Write a short editorial brief about migrating an existing REST + MongoDB app to Firebase Auth, Firestore and client-side Gemini calls.';
 
-export function StructuredPanel({ functions }: { functions: Functions }) {
+export function StructuredPanel() {
   const [prompt, setPrompt] = useState(placeholder);
   const [result, setResult] = useState<StructuredResult | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -17,7 +16,7 @@ export function StructuredPanel({ functions }: { functions: Functions }) {
     setLoading(true);
     setError(null);
     try {
-      setResult(await api.generateStructured(functions, { prompt }));
+      setResult(await api.generateStructured({ prompt }));
     } catch (cause) {
       setError(normalizeError(cause));
     } finally {
@@ -28,7 +27,7 @@ export function StructuredPanel({ functions }: { functions: Functions }) {
   return (
     <Card
       title="Structured output"
-      description="Gemini is constrained with a response schema, then the payload is re-validated with Zod before it is returned."
+      description="Gemini is asked for application/json, then the payload is re-validated with Zod in the browser before it is rendered."
       footer={
         result ? (
           <span>
@@ -36,7 +35,7 @@ export function StructuredPanel({ functions }: { functions: Functions }) {
             and was repaired)
           </span>
         ) : (
-          <span>Invalid model output is never passed through to the client.</span>
+          <span>Invalid model output is never passed through to the UI.</span>
         )
       }
     >
@@ -59,6 +58,12 @@ export function StructuredPanel({ functions }: { functions: Functions }) {
           error ? `${error.message}${error.code !== 'unknown' ? ` (${error.code})` : ''}` : null
         }
       />
+      {error?.code === 'gemini-key-missing' ? (
+        <p className="text-sm text-amber-300">
+          Open the <strong>Setup</strong> tab and paste your Gemini API key — it is kept in this
+          tab&apos;s sessionStorage only.
+        </p>
+      ) : null}
 
       {result ? (
         <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-950/70 p-4">

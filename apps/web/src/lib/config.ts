@@ -1,6 +1,9 @@
 /**
- * All client configuration comes from Vite env vars (`VITE_*`). Nothing secret
- * may live here: the Gemini API key is only ever present on the server.
+ * All client configuration comes from Vite env vars (`VITE_*`).
+ *
+ * Spark-plan build (no Cloud Functions): the Gemini API key is NOT part of this
+ * config. The user pastes their own key at runtime and it lives in
+ * `sessionStorage` only — see `lib/geminiKey.ts`.
  */
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? '',
@@ -16,9 +19,11 @@ export const useEmulators = import.meta.env.VITE_USE_EMULATORS === 'true';
 export const emulatorConfig = {
   authHost: import.meta.env.VITE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099',
   firestoreHost: import.meta.env.VITE_FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080',
-  functionsHost: import.meta.env.VITE_FUNCTIONS_EMULATOR_HOST ?? '127.0.0.1:5001',
-  functionsRegion: import.meta.env.VITE_FUNCTIONS_REGION ?? 'us-central1',
 };
+
+/** Model used for every browser-side Gemini REST call. */
+export const geminiModel: string =
+  (import.meta.env.VITE_GEMINI_MODEL as string | undefined) ?? 'gemini-2.5-flash';
 
 export const isConfigured = Boolean(
   firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId,

@@ -1,14 +1,11 @@
 rules_version = '2';
 
-// Firebase AI Starter Kit - security rules
-//
-// Model: every document lives under the signed-in user's own subtree
-// (`users/{uid}/...`). Ownership is proven by `request.auth.uid`, never by a
-// field the client can write. Fields the server owns (`role`, usage counters,
-// rate-limit buckets) are not writable by clients at all.
+// Spark-plan edition: there are no Cloud Functions, so these rules are the only
+// backend authorisation layer. Every collection is either owner-scoped or
+// write-validated; nothing is world-readable and nothing is client-deletable
+// except a user's own conversations/messages.
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function signedIn() {
       return request.auth != null;
     }
@@ -17,91 +14,142 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    // ---- User profiles -----------------------------------------------------
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isNonEmptyString(value, max) {
+      return value is string && value.size() > 0 && value.size() <= max;
+    }
+
+    function isShortString(value, max) {
+      return value is string && value.size() <= max;
+    }
+
+    function nonNegativeInt(value) {
+      return value is int && value >= 0;
+    }
+
+    // ---------------------------------------------------------------------
+    // users/{uid} — the profile document
+    // ---------------------------------------------------------------------
     match /users/{uid} {
-      allow read: if isOwner(uid);
+      allow get: if isOwner(uid);
+      allow list: if isOwner(uid);
 
       allow create: if isOwner(uid)
-        && request.resource.data.keys().hasOnly([
+        && incoming().keys().hasOnly([
           'email', 'displayName', 'bio', 'role', 'preferences', 'createdAt', 'updatedAt'
         ])
-        && request.resource.data.role == 'user'
-        && request.resource.data.bio is string
-        && request.resource.data.bio.size() <= 280
-        && request.resource.data.email is string
-        && request.resource.data.email.size() <= 320
-        && (!('displayName' in request.resource.data)
-            || request.resource.data.displayName == null
-            || (request.resource.data.displayName is string
-                && request.resource.data.displayName.size() <= 80));
+        && incoming().role == 'user'
+        && isShortString(incoming().email, 320)
+        && isShortString(incoming().displayName, 80)
+        && isShortString(incoming().bio, 280)
+        && incoming().preferences is map
+        && incoming().preferences.keys().size() <= 32;
 
+      // Only the three editable fields may ever change; role and email are frozen.
       allow update: if isOwner(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['displayName', 'bio', 'preferences', 'updatedAt'])
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.bio is string
-        && request.resource.data.bio.size() <= 280
-        && (!('displayName' in request.resource.data)
-            || request.resource.data.displayName == null
-            || (request.resource.data.displayName is string
-                && request.resource.data.displayName.size() <= 80));
+        && isShortString(incoming().displayName, 80)
+        && isShortString(incoming().bio, 280)
+        && incoming().preferences is map
+        && incoming().preferences.keys().size() <= 32;
 
-      // Profiles are archived, never hard-deleted by a client.
       allow delete: if false;
 
-      // ---- Conversations ---------------------------------------------------
-      match /conversations/{conversationId} {
-        allow read: if isOwner(uid);
+      // -------------------------------------------------------------------
+      // users/{uid}/conversations/{cid} — one document per chat thread
+      // -------------------------------------------------------------------
+      match /conversations/{cid} {
+        allow get: if isOwner(uid);
+        allow list: if isOwner(uid);
 
         allow create: if isOwner(uid)
-          && request.resource.data.keys().hasOnly([
+          && incoming().keys().hasOnly([
             'title', 'model', 'messageCount', 'lastMessagePreview', 'createdAt', 'updatedAt'
           ])
-          && request.resource.data.title is string
-          && request.resource.data.title.size() > 0
-          && request.resource.data.title.size() <= 120
-          && request.resource.data.model is string;
+          && isNonEmptyString(incoming().title, 120)
+          && isShortString(incoming().model, 64)
+          && incoming().messageCount == 0
+          && isShortString(incoming().lastMessagePreview, 140);
 
+        // messageCount may only grow (the client appends two messages per turn).
         allow update: if isOwner(uid)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['title', 'updatedAt'])
-          && request.resource.data.title.size() > 0
-          && request.resource.data.title.size() <= 120;
+               .hasOnly(['title', 'messageCount', 'lastMessagePreview', 'updatedAt'])
+          && isNonEmptyString(incoming().title, 120)
+          && nonNegativeInt(incoming().messageCount)
+          && incoming().messageCount >= resource.data.messageCount
+          && isShortString(incoming().lastMessagePreview, 140);
 
         allow delete: if isOwner(uid);
 
-        // ---- Messages -------------------------------------------------------
+        // ---------------------------------------------------------------
+        // users/{uid}/conversations/{cid}/messages/{messageId}
+        // ---------------------------------------------------------------
         match /messages/{messageId} {
-          allow read: if isOwner(uid);
+          allow get: if isOwner(uid);
+          allow list: if isOwner(uid);
 
-          // Clients may append their own user turns only. Assistant turns are
-          // written by the server (Admin SDK bypasses these rules).
           allow create: if isOwner(uid)
-            && request.resource.data.keys().hasOnly([
-              'role', 'text', 'model', 'tokens', 'createdAt'
-            ])
-            && request.resource.data.role == 'user'
-            && request.resource.data.text is string
-            && request.resource.data.text.size() > 0
-            && request.resource.data.text.size() <= 8000;
+            && incoming().keys().hasOnly(['role', 'text', 'model', 'tokens', 'createdAt'])
+            && incoming().role in ['user', 'model']
+            && isNonEmptyString(incoming().text, 8000)
+            && (incoming().role == 'user' || isShortString(incoming().model, 64))
+            && (!('tokens' in incoming()) || nonNegativeInt(incoming().tokens));
 
+          // Messages are append-only: no editing history after the fact.
           allow update: if false;
           allow delete: if isOwner(uid);
         }
       }
 
-      // ---- Server-owned usage counters -------------------------------------
-      match /usage/{month} {
-        allow read: if isOwner(uid);
-        allow write: if false;
-      }
+      // -------------------------------------------------------------------
+      // users/{uid}/usage_events/{eventId} — one document per AI call
+      // Replaces the server-side counters of the Functions build.
+      // -------------------------------------------------------------------
+      match /usage_events/{eventId} {
+        allow get: if isOwner(uid);
+        allow list: if isOwner(uid);
 
-      match /{document=**} {
-        allow read, write: if false;
+        allow create: if isOwner(uid)
+          && incoming().keys().hasOnly([
+            'endpoint', 'model', 'promptTokens', 'candidateTokens', 'totalTokens', 'createdAt'
+          ])
+          && incoming().endpoint in ['aiGenerateText', 'aiGenerateStructured', 'aiChat']
+          && isShortString(incoming().model, 64)
+          && nonNegativeInt(incoming().promptTokens)
+          && nonNegativeInt(incoming().candidateTokens)
+          && nonNegativeInt(incoming().totalTokens);
+
+        allow update, delete: if false;
       }
     }
 
-    // ---- Rate limit buckets: server only ------------------------------------
+    // ---------------------------------------------------------------------
+    // secure_echo/{id} — top-level collection that proves input validation
+    // can be enforced by rules alone, with no trusted server in the loop.
+    // ---------------------------------------------------------------------
+    match /secure_echo/{echoId} {
+      allow get: if signedIn() && resource.data.uid == request.auth.uid;
+
+      // No client-side listing: documents are only fetched by id right after
+      // creation, so a blanket list rule would leak other users' echoes.
+      allow list: if false;
+
+      allow create: if signedIn()
+        && incoming().keys().hasOnly(['message', 'priority', 'uid', 'createdAt'])
+        && incoming().uid == request.auth.uid
+        && isNonEmptyString(incoming().message, 500)
+        && incoming().priority in ['low', 'medium', 'high'];
+
+      allow update, delete: if false;
+    }
+
+    // Rate-limit buckets were server-owned in the Functions build and are now
+    // dead weight; keep them unreadable and unwritable for clarity.
     match /rateLimits/{bucketId} {
       allow read, write: if false;
     }

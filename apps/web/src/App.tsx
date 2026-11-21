@@ -10,16 +10,16 @@ import { SecurityPanel } from './components/SecurityPanel';
 import { SetupPanel } from './components/SetupPanel';
 import { StructuredPanel } from './components/StructuredPanel';
 
-const tabs = ['Text', 'Structured', 'Chat', 'Profile', 'Security'] as const;
+const tabs = ['Text', 'Structured', 'Chat', 'Profile', 'Security', 'Setup'] as const;
 type Tab = (typeof tabs)[number];
 
 export default function App() {
-  const { functions, db, configured } = getFirebase();
+  const { db, configured } = getFirebase();
   const auth = useAuth();
   const [tab, setTab] = useState<Tab>('Text');
 
   const content = useMemo(() => {
-    if (!configured || !functions || !db) return <SetupPanel />;
+    if (!configured || !db) return <SetupPanel configured={configured} />;
     if (!auth.user) {
       return (
         <AuthPanel
@@ -36,19 +36,21 @@ export default function App() {
 
     switch (tab) {
       case 'Text':
-        return <AiTextPanel functions={functions} />;
+        return <AiTextPanel />;
       case 'Structured':
-        return <StructuredPanel functions={functions} />;
+        return <StructuredPanel />;
       case 'Chat':
-        return <ChatPanel functions={functions} />;
+        return <ChatPanel />;
       case 'Profile':
-        return <ProfilePanel functions={functions} db={db} uid={auth.user.uid} />;
+        return <ProfilePanel db={db} uid={auth.user.uid} />;
       case 'Security':
-        return <SecurityPanel functions={functions} />;
+        return <SecurityPanel />;
+      case 'Setup':
+        return <SetupPanel configured={configured} />;
       default:
         return null;
     }
-  }, [auth, configured, db, functions, tab]);
+  }, [auth, configured, db, tab]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-10">
@@ -57,8 +59,8 @@ export default function App() {
           <div>
             <h1 className="text-2xl font-semibold text-white">Firebase AI Starter Kit</h1>
             <p className="mt-1 text-sm text-slate-400">
-              Auth · Firestore · callable Gemini endpoints · rules &amp; tests — a working reference
-              you can deploy and extend.
+              Auth · Firestore · client-side Gemini REST calls · rules &amp; tests — a working
+              reference you can deploy on the free Spark plan.
             </p>
           </div>
           <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
@@ -89,7 +91,10 @@ export default function App() {
       {content}
 
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4 text-xs text-slate-500">
-        <span>Gemini calls run only on Cloud Functions — no API key in the browser.</span>
+        <span>
+          No Cloud Functions on the Spark plan — Gemini is called from your browser with a key that
+          stays in this tab, and Firestore rules enforce access.
+        </span>
         <span>{configured ? 'Firebase connected' : 'Firebase not configured'}</span>
       </footer>
     </div>
