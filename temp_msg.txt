@@ -1,6 +1,0 @@
-fix: explicit Firestore types and platform-safe CI installs
-
-- Annotate Transaction/QueryDocumentSnapshot callbacks so functions
-  typecheck passes on a clean Linux install.
-- Drop Windows-generated lockfiles in CI before installing: npm fails
-  to link cross-platform optional native bindings (rolldown) otherwise.
