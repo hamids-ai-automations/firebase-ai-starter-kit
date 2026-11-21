@@ -4,15 +4,15 @@ Schema: 1 · Updated: 2026-11-21 · Owner: Muhammad Hamid
 
 ## Snapshot
 
-| Field | Value |
-| --- | --- |
-| Repository | `hamids-ai-automations/firebase-ai-starter-kit` (public, MIT) |
-| Current phase | Phase 9–10 complete; long-term maintenance |
-| Deployment mode live | Spark (client-side Gemini, no billing) |
-| Live app | <https://fb-ai-starter-kit.web.app> |
-| Portfolio page | <https://marvis.web.app/projects/firebase-ai-starter-kit> |
-| CI | Green on `main` (Node 22 + 24 matrix, rules job) |
-| Open blockers | Blaze deployment of `functions/` (needs billing account) |
+| Field                | Value                                                         |
+| -------------------- | ------------------------------------------------------------- |
+| Repository           | `hamids-ai-automations/firebase-ai-starter-kit` (public, MIT) |
+| Current phase        | Phase 9–10 complete; long-term maintenance                    |
+| Deployment mode live | Spark (client-side Gemini, no billing)                        |
+| Live app             | <https://fb-ai-starter-kit.web.app>                           |
+| Portfolio page       | <https://marvis.web.app/projects/firebase-ai-starter-kit>     |
+| CI                   | Green on `main` (Node 22 + 24 matrix, rules job)              |
+| Open blockers        | Blaze deployment of `functions/` (needs billing account)      |
 
 ## Done
 

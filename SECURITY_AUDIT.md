@@ -5,14 +5,14 @@ Date: 2026-11-21.
 
 ## Threat model deltas for Spark mode
 
-| Risk | Spark mode exposure | Mitigation in this repository |
-| --- | --- | --- |
-| API key disclosure | The **user's** key is readable by that user, by definition | Key is entered per session, held in `sessionStorage`, never sent anywhere except Google, never written to Firestore, never committed |
-| Project owner's key leaking | Would happen if a key were put in `VITE_*` | No key is configured in `.env.production`; docs state `VITE_*` values are public |
-| Cost abuse | Attacker with a stolen user session can spend that user's quota | Usage is metered per user in `usage_events`; Blaze mode adds transactional per-minute limits |
-| Cross-tenant reads | Firestore is the only shared surface | Every document lives under `users/{uid}` with `request.auth.uid == uid`; catch-all denies the rest |
-| Malformed model output | A prompt-injected response could break the UI | Structured output is re-validated with Zod before reaching React; text output is rendered as text, not HTML |
-| Rule drift | Rules edited in console only | Rules are versioned in git and deployed from CI/manual runbook |
+| Risk                        | Spark mode exposure                                             | Mitigation in this repository                                                                                                        |
+| --------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| API key disclosure          | The **user's** key is readable by that user, by definition      | Key is entered per session, held in `sessionStorage`, never sent anywhere except Google, never written to Firestore, never committed |
+| Project owner's key leaking | Would happen if a key were put in `VITE_*`                      | No key is configured in `.env.production`; docs state `VITE_*` values are public                                                     |
+| Cost abuse                  | Attacker with a stolen user session can spend that user's quota | Usage is metered per user in `usage_events`; Blaze mode adds transactional per-minute limits                                         |
+| Cross-tenant reads          | Firestore is the only shared surface                            | Every document lives under `users/{uid}` with `request.auth.uid == uid`; catch-all denies the rest                                   |
+| Malformed model output      | A prompt-injected response could break the UI                   | Structured output is re-validated with Zod before reaching React; text output is rendered as text, not HTML                          |
+| Rule drift                  | Rules edited in console only                                    | Rules are versioned in git and deployed from CI/manual runbook                                                                       |
 
 ## Controls verified
 

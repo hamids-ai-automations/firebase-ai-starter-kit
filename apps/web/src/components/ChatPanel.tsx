@@ -110,11 +110,7 @@ export function ChatPanel() {
         <Button onClick={() => void send()} disabled={loading || message.trim().length === 0}>
           {loading ? 'Sending…' : 'Send'}
         </Button>
-        <Button
-          variant="ghost"
-          onClick={() => void remove()}
-          disabled={loading || !conversationId}
-        >
+        <Button variant="ghost" onClick={() => void remove()} disabled={loading || !conversationId}>
           Delete conversation
         </Button>
         {mocked ? <Badge tone="amber">mock mode</Badge> : null}

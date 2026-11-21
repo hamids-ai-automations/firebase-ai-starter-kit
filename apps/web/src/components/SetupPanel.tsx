@@ -41,8 +41,9 @@ export function SetupPanel({ configured }: { configured: boolean }) {
             <p>Production builds read the same keys from apps/web/.env.production.</p>
             <p>Enable Email/Password and Google sign-in, then create the Firestore database.</p>
             <p>
-              Deploy the rules from <code className="text-slate-200">firestore/firestore.rules</code>{' '}
-              — on the Spark plan they are the only backend authorisation layer.
+              Deploy the rules from{' '}
+              <code className="text-slate-200">firestore/firestore.rules</code> — on the Spark plan
+              they are the only backend authorisation layer.
             </p>
           </div>
         </Card>
@@ -94,11 +95,15 @@ export function SetupPanel({ configured }: { configured: boolean }) {
         description="Same guarantees as the Cloud Functions build, enforced by Firestore rules and the client instead of a server."
       >
         <ul className="list-disc space-y-2 pl-5 text-sm text-slate-300">
-          <li>Firestore rules decide who may read or write a document; there is no trusted server.</li>
+          <li>
+            Firestore rules decide who may read or write a document; there is no trusted server.
+          </li>
           <li>
             secureEcho writes to the secure_echo collection and lets the rules reject bad payloads.
           </li>
-          <li>Structured output is re-validated with Zod in the browser before it reaches the UI.</li>
+          <li>
+            Structured output is re-validated with Zod in the browser before it reaches the UI.
+          </li>
           <li>Your Gemini key stays in this tab and is never written to a database.</li>
           <li>Usage counters are appended per AI call and read back with Firestore count().</li>
         </ul>

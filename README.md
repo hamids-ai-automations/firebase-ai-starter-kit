@@ -11,10 +11,10 @@ instead of a snippet collection.
 It ships in two interchangeable deployment modes. The default build targets the **free Spark plan**;
 the same endpoints also exist as server-side Cloud Functions for teams that want the key off the client.
 
-| Mode                                   | Gemini calls run                                                   | Billing             | Status                                                    |
-| -------------------------------------- | ------------------------------------------------------------------ | ------------------- | --------------------------------------------------------- |
-| **Spark mode** (default build)         | In the browser via REST, using the signed-in user's own API key     | None — no Blaze     | **Live:** <https://fb-ai-starter-kit.web.app>              |
-| **Blaze mode** (`functions/` variant)  | Inside Cloud Functions 2nd gen, key held as a server-only secret    | Blaze plan required | Reference implementation, deployed on demand               |
+| Mode                                  | Gemini calls run                                                 | Billing             | Status                                        |
+| ------------------------------------- | ---------------------------------------------------------------- | ------------------- | --------------------------------------------- |
+| **Spark mode** (default build)        | In the browser via REST, using the signed-in user's own API key  | None — no Blaze     | **Live:** <https://fb-ai-starter-kit.web.app> |
+| **Blaze mode** (`functions/` variant) | Inside Cloud Functions 2nd gen, key held as a server-only secret | Blaze plan required | Reference implementation, deployed on demand  |
 
 - **Live demo (Spark):** <https://fb-ai-starter-kit.web.app>
 - **Project page:** <https://marvis.web.app/projects/firebase-ai-starter-kit>
@@ -76,13 +76,13 @@ names), so switching modes is a configuration change, not a rewrite.
 
 Building an AI feature on Firebase usually raises the same five problems:
 
-| Problem                  | Typical shortcut                                     | What this kit does                                                                         |
-| ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| API key exposure         | Key inlined into the production bundle               | Spark mode: user-supplied key kept in `sessionStorage` only. Blaze mode: server-only secret  |
-| Unbounded cost           | No limits on prompt size, history, or call frequency | Zod length caps, message-history caps, Firestore-backed per-user rate limits               |
-| Data leakage             | Shared collection with client-side filtering         | `users/{uid}/**` ownership rules, enforced and unit-tested                                 |
-| Unvalidated model output | Raw JSON parsed in the UI                            | Schema-constrained structured output validated before it reaches React                     |
-| Untestable setup         | Manual clicking through the console                  | Emulator Suite, mocked model, 51 unit tests, 22 rules tests, 14 end-to-end emulator checks |
+| Problem                  | Typical shortcut                                     | What this kit does                                                                          |
+| ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| API key exposure         | Key inlined into the production bundle               | Spark mode: user-supplied key kept in `sessionStorage` only. Blaze mode: server-only secret |
+| Unbounded cost           | No limits on prompt size, history, or call frequency | Zod length caps, message-history caps, Firestore-backed per-user rate limits                |
+| Data leakage             | Shared collection with client-side filtering         | `users/{uid}/**` ownership rules, enforced and unit-tested                                  |
+| Unvalidated model output | Raw JSON parsed in the UI                            | Schema-constrained structured output validated before it reaches React                      |
+| Untestable setup         | Manual clicking through the console                  | Emulator Suite, mocked model, 51 unit tests, 22 rules tests, 14 end-to-end emulator checks  |
 
 ## 3. Key features
 
@@ -196,9 +196,9 @@ emulator; the AI responses visible on it come from `AI_MOCK_MODE=true`, not a bi
 Captured from the live Spark deployment (<https://fb-ai-starter-kit.web.app>), signed in with a
 throwaway account and no Gemini key configured:
 
-| Live sign-in                                   | Live dashboard (six panels)                     |
-| ---------------------------------------------- | ----------------------------------------------- |
-| ![Sign-in](docs/screenshots/shot-auth.png)     | ![Dashboard](docs/screenshots/shot-dashboard.png) |
+| Live sign-in                               | Live dashboard (six panels)                       |
+| ------------------------------------------ | ------------------------------------------------- |
+| ![Sign-in](docs/screenshots/shot-auth.png) | ![Dashboard](docs/screenshots/shot-dashboard.png) |
 
 Mobile layout of the same deployment: ![Mobile](docs/screenshots/shot-mobile.png)
 
@@ -368,12 +368,12 @@ const { text } = await generateText({ prompt: 'Explain Firestore rules in 3 bull
 console.log(text);
 ```
 
-| Endpoint               | Purpose                 | Spark mode (client)                    | Blaze mode (functions)              | Highlights                                                     |
-| ---------------------- | ----------------------- | -------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
-| `generateText`         | One-shot completion     | Gemini REST with the user's key        | `aiGenerateText` callable           | Optional system instruction, temperature, token cap            |
-| `chat`                 | Multi-turn conversation | REST + Firestore writes under rules    | `aiChat` callable                   | Persists history, caps history length, returns conversation id |
-| `generateStructured`   | Schema-constrained JSON | `responseSchema` + Zod re-validation   | `aiGenerateStructured` callable     | Returns a validated `ArticleBrief` object                      |
-| `usageSummary`         | Usage readout           | Firestore `count()` / `sum()` aggregation | `aiUsageSummary` callable        | No unbounded reads                                             |
+| Endpoint             | Purpose                 | Spark mode (client)                       | Blaze mode (functions)          | Highlights                                                     |
+| -------------------- | ----------------------- | ----------------------------------------- | ------------------------------- | -------------------------------------------------------------- |
+| `generateText`       | One-shot completion     | Gemini REST with the user's key           | `aiGenerateText` callable       | Optional system instruction, temperature, token cap            |
+| `chat`               | Multi-turn conversation | REST + Firestore writes under rules       | `aiChat` callable               | Persists history, caps history length, returns conversation id |
+| `generateStructured` | Schema-constrained JSON | `responseSchema` + Zod re-validation      | `aiGenerateStructured` callable | Returns a validated `ArticleBrief` object                      |
+| `usageSummary`       | Usage readout           | Firestore `count()` / `sum()` aggregation | `aiUsageSummary` callable       | No unbounded reads                                             |
 
 `generateStructured` uses a Gemini response schema so the model cannot return free-form JSON, and the
 result is re-validated with Zod before it reaches React — in both modes. Errors share one envelope

@@ -4,23 +4,23 @@ Last updated: 2026-11-21
 
 ## Live endpoints
 
-| What | URL | State |
-| --- | --- | --- |
-| Demo application (Spark mode) | <https://fb-ai-starter-kit.web.app> | Live, HTTP 200, six panels verified |
-| Portfolio project page | <https://marvis.web.app/projects/firebase-ai-starter-kit> | Live, HTTP 200 |
-| Repository | <https://github.com/hamids-ai-automations/firebase-ai-starter-kit> | Public, MIT |
-| Cloud Functions (Blaze mode) | — | Not deployed: requires a billing account |
+| What                          | URL                                                                | State                                    |
+| ----------------------------- | ------------------------------------------------------------------ | ---------------------------------------- |
+| Demo application (Spark mode) | <https://fb-ai-starter-kit.web.app>                                | Live, HTTP 200, six panels verified      |
+| Portfolio project page        | <https://marvis.web.app/projects/firebase-ai-starter-kit>          | Live, HTTP 200                           |
+| Repository                    | <https://github.com/hamids-ai-automations/firebase-ai-starter-kit> | Public, MIT                              |
+| Cloud Functions (Blaze mode)  | —                                                                  | Not deployed: requires a billing account |
 
 ## Infrastructure in use
 
-| Resource | Value |
-| --- | --- |
-| Firebase project | `my-1st-web-app-ef52d` — **Spark plan, no billing account** |
-| Hosting site | `fb-ai-starter-kit` (dedicated site, `target: web`), existing sites untouched |
-| Firestore database | `(default)`, location `asia-south1`, production mode, free tier |
-| Authentication | Email/Password enabled; Default Web App registered |
-| Rules | `firestore/firestore.rules` deployed (owner-scoped `users/{uid}/**`, `secure_echo`, deny-all catch-all) |
-| Indexes | `firestore/firestore.indexes.json` deployed |
+| Resource           | Value                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| Firebase project   | `my-1st-web-app-ef52d` — **Spark plan, no billing account**                                             |
+| Hosting site       | `fb-ai-starter-kit` (dedicated site, `target: web`), existing sites untouched                           |
+| Firestore database | `(default)`, location `asia-south1`, production mode, free tier                                         |
+| Authentication     | Email/Password enabled; Default Web App registered                                                      |
+| Rules              | `firestore/firestore.rules` deployed (owner-scoped `users/{uid}/**`, `secure_echo`, deny-all catch-all) |
+| Indexes            | `firestore/firestore.indexes.json` deployed                                                             |
 
 ## What was deployed
 

@@ -11,14 +11,14 @@ Verified end to end on 2026-11-21 against a Spark project — the result is live
 
 ## 1. What Spark mode is (and is not)
 
-| | Spark mode (this guide) | Blaze mode (`functions/`) |
-| --- | --- | --- |
-| Gemini calls | Browser → `generativelanguage.googleapis.com/v1beta` with the **user's own key** | Cloud Functions 2nd gen with server-only secret |
-| API key location | `sessionStorage` of the current tab, supplied in the Setup tab | Functions secret `GEMINI_API_KEY` |
-| Billing account | Not required | Required |
-| Server-side rate limiting | Not available — usage is metered client-side into `usage_events` | Transaction-based per-minute limits |
-| App Check | Optional, add `VITE_APPCHECK_SITE_KEY` | Recommended and enforceable |
-| Code path | `apps/web/src/lib/api.ts` (client implementation) | Same module, callable implementation |
+|                           | Spark mode (this guide)                                                          | Blaze mode (`functions/`)                       |
+| ------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Gemini calls              | Browser → `generativelanguage.googleapis.com/v1beta` with the **user's own key** | Cloud Functions 2nd gen with server-only secret |
+| API key location          | `sessionStorage` of the current tab, supplied in the Setup tab                   | Functions secret `GEMINI_API_KEY`               |
+| Billing account           | Not required                                                                     | Required                                        |
+| Server-side rate limiting | Not available — usage is metered client-side into `usage_events`                 | Transaction-based per-minute limits             |
+| App Check                 | Optional, add `VITE_APPCHECK_SITE_KEY`                                           | Recommended and enforceable                     |
+| Code path                 | `apps/web/src/lib/api.ts` (client implementation)                                | Same module, callable implementation            |
 
 Both modes expose the same function names (`generateText`, `generateStructured`, `chat`,
 `deleteConversation`, `ensureProfile`, `updateProfile`, `secureEcho`, `usageSummary`), so an
@@ -45,7 +45,7 @@ inlined into the public bundle and readable by anyone who loads the site.
 
 1. **Build → Authentication → Get started**.
 2. **Sign-in method → Email/Password → Enable → Save**.
-3. Optional: enable *Email link* or Google if you want those buttons wired.
+3. Optional: enable _Email link_ or Google if you want those buttons wired.
 
 Firebase creates a **Default Web App** automatically when a web app is registered; its config feeds
 step 6.
@@ -87,7 +87,7 @@ control comes from Firestore rules and Auth, not from hiding that key.
 
 Then harden it in **Google Cloud console → APIs & Services → Credentials → browser key** by adding an
 HTTP referrer restriction for your domains (`*.web.app`, `*.firebaseapp.com`, your custom domain).
-Also confirm **API restrictions** allow only *Identity Toolkit*, *Firestore* and *Token Service*.
+Also confirm **API restrictions** allow only _Identity Toolkit_, _Firestore_ and _Token Service_.
 
 ## 7. Build
 
@@ -162,8 +162,8 @@ Then, in the browser:
 2. Leave the Setup tab empty → AI actions fail with `gemini-key-missing` and a pointer to the Setup
    tab. That is the expected Spark behaviour, not a bug.
 3. Paste a personal Gemini key into Setup → text, structured and chat panels call Gemini directly.
-4. Profile → *AI usage* shows the event count read through a Firestore `count()` aggregation.
-5. Security → *Write through the rules* proves the rules accept a valid payload and reject an
+4. Profile → _AI usage_ shows the event count read through a Firestore `count()` aggregation.
+5. Security → _Write through the rules_ proves the rules accept a valid payload and reject an
    over-long or wrong-owner one.
 
 Verified on 2026-11-21: 0 console errors, 0 failed requests across all six panels after sign-up.
@@ -180,24 +180,24 @@ re-deploy the previous `firestore.rules` from git history with `firebase deploy 
 
 ## 12. Cost and quota posture
 
-| Resource | Free-tier behaviour | Guardrail in this repo |
-| --- | --- | --- |
-| Hosting | 10 GB storage, 360 MB/day transfer | Single ~0.9 MB bundle, immutable caching |
-| Firestore | 1 GiB storage, 50k reads / 20k writes / 20k deletes per day | Per-user paths, capped message text (8k), usage aggregation via `count()` |
-| Authentication | Email/password included, generous MAU | No verification emails required for demo accounts |
-| Gemini | Billed to whoever owns the key | Users bring their own key; nothing is billed to the project owner |
+| Resource       | Free-tier behaviour                                         | Guardrail in this repo                                                    |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Hosting        | 10 GB storage, 360 MB/day transfer                          | Single ~0.9 MB bundle, immutable caching                                  |
+| Firestore      | 1 GiB storage, 50k reads / 20k writes / 20k deletes per day | Per-user paths, capped message text (8k), usage aggregation via `count()` |
+| Authentication | Email/password included, generous MAU                       | No verification emails required for demo accounts                         |
+| Gemini         | Billed to whoever owns the key                              | Users bring their own key; nothing is billed to the project owner         |
 
 ## 13. Troubleshooting
 
-| Symptom | Cause | Fix |
-| --- | --- | --- |
-| `auth/unauthorized-domain` | Domain not allowlisted | Authentication → Settings → Authorized domains → add the site host |
-| `auth/invalid-api-key` | `VITE_FIREBASE_*` wrong or stale build | Fix `.env.production`, rebuild, redeploy |
-| Blank page after deploy | `public` path points at the wrong directory | `firebase.json` → `apps/web/dist` |
-| `Missing or insufficient permissions` | Rules not deployed to the right project | `firebase use <project>` then `firebase deploy --only firestore:rules` |
-| `gemini-key-missing` | No key in the Setup tab | Expected in Spark mode until the user adds one |
-| `403 API key not valid` from Gemini | Key restricted to a different referrer | Relax the key's HTTP referrer restriction in Google Cloud |
-| Deploy overwrote another site | Target not set | Always deploy `hosting:web`; check `firebase target:apply` |
+| Symptom                               | Cause                                       | Fix                                                                    |
+| ------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| `auth/unauthorized-domain`            | Domain not allowlisted                      | Authentication → Settings → Authorized domains → add the site host     |
+| `auth/invalid-api-key`                | `VITE_FIREBASE_*` wrong or stale build      | Fix `.env.production`, rebuild, redeploy                               |
+| Blank page after deploy               | `public` path points at the wrong directory | `firebase.json` → `apps/web/dist`                                      |
+| `Missing or insufficient permissions` | Rules not deployed to the right project     | `firebase use <project>` then `firebase deploy --only firestore:rules` |
+| `gemini-key-missing`                  | No key in the Setup tab                     | Expected in Spark mode until the user adds one                         |
+| `403 API key not valid` from Gemini   | Key restricted to a different referrer      | Relax the key's HTTP referrer restriction in Google Cloud              |
+| Deploy overwrote another site         | Target not set                              | Always deploy `hosting:web`; check `firebase target:apply`             |
 
 ## 14. What this mode intentionally does not give you
 
