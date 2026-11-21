@@ -1,0 +1,42 @@
+{
+  "name": "firebase-ai-starter-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-minded Firebase + Gemini AI starter kit: Auth, Firestore, secure Cloud Functions, reusable AI integrations.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "setup": "npm --prefix apps/web install && npm --prefix functions install",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:functions": "npm --prefix functions run build:watch",
+    "emulators": "firebase emulators:start",
+    "build": "npm --prefix apps/web run build && npm --prefix functions run build",
+    "build:web": "npm --prefix apps/web run build",
+    "build:functions": "npm --prefix functions run build",
+    "typecheck": "npm --prefix apps/web run typecheck && npm --prefix functions run typecheck",
+    "lint": "eslint .",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml,css}\" --ignore-path .prettierignore",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml,css}\" --ignore-path .prettierignore",
+    "test": "npm --prefix functions run test:unit && npm --prefix apps/web run test",
+    "test:unit": "npm --prefix functions run test:unit",
+    "test:rules": "firebase emulators:exec --only auth,firestore --project demo-fb-ai-starter-kit \"npm --prefix functions run test:rules\"",
+    "test:all": "npm run test && npm run test:rules",
+    "test:live": "npm --prefix functions run test:live",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "verify": "npm run check:secrets && npm run lint && npm run typecheck && npm run test && npm run build",
+    "deploy": "npm run build && firebase deploy",
+    "test:emulator": "firebase emulators:exec --only auth,firestore,functions --project demo-fb-ai-starter-kit \"node scripts/emulator-smoke.mjs\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.8",
+    "globals": "^17.14.0",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^8.73.0"
+  }
+}

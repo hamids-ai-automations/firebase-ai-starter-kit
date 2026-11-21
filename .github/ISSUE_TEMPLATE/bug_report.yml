@@ -1,0 +1,63 @@
+---
+name: Bug report
+description: Something in the starter kit does not behave as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please never paste API keys, service account JSON, or
+        real user data. Redact tokens as `<redacted>`.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Actual behaviour, including the exact error message or callable code.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. npm run setup
+        2. npm run dev
+        3. Click "Create account" with ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web app (React/Vite)
+        - Cloud Functions
+        - Firestore rules / indexes
+        - Auth
+        - Emulators / local dev
+        - Docs
+        - CI
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Node version, firebase-tools version, browser, OS.
+      placeholder: Node 22.11, firebase-tools 15.4, Chrome 133, macOS 15
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I ran `npm run verify` and included any failing output above.
+        - label: I removed all credentials and personal data from this report.
+          required: true

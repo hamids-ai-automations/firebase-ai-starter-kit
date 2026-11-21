@@ -1,0 +1,78 @@
+name: Deploy
+
+# Manual, guarded deployment. Requires FIREBASE_SERVICE_ACCOUNT_JSON,
+# FIREBASE_PROJECT_ID and (for real AI calls) GEMINI_API_KEY repository secrets.
+# Rules-only and full deploys are separate jobs so a rules change can ship alone.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: What to deploy
+        type: choice
+        options: [hosting, functions, rules, all]
+        default: rules
+      confirm:
+        description: Type DEPLOY to confirm
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require explicit confirmation
+        if: inputs.confirm != 'DEPLOY'
+        run: |
+          echo "Confirmation string missing; aborting."
+          exit 1
+
+  deploy:
+    needs: guard
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix apps/web
+          npm ci --prefix functions
+
+      - name: Verify before deploy
+        run: npm run verify
+
+      - name: Write service account
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+
+      - name: Deploy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            hosting)  ONLY="--only hosting" ;;
+            functions) ONLY="--only functions" ;;
+            rules)    ONLY="--only firestore:rules,firestore:indexes" ;;
+            all)      ONLY="--only hosting,functions,firestore:rules,firestore:indexes" ;;
+            *) echo "Unknown target: $TARGET"; exit 1 ;;
+          esac
+          echo "Deploying: $ONLY"
+          npx --yes firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" $ONLY
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"

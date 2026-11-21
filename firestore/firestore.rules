@@ -1,0 +1,114 @@
+rules_version = '2';
+
+// Firebase AI Starter Kit - security rules
+//
+// Model: every document lives under the signed-in user's own subtree
+// (`users/{uid}/...`). Ownership is proven by `request.auth.uid`, never by a
+// field the client can write. Fields the server owns (`role`, usage counters,
+// rate-limit buckets) are not writable by clients at all.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // ---- User profiles -----------------------------------------------------
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly([
+          'email', 'displayName', 'bio', 'role', 'preferences', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.role == 'user'
+        && request.resource.data.bio is string
+        && request.resource.data.bio.size() <= 280
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 320
+        && (!('displayName' in request.resource.data)
+            || request.resource.data.displayName == null
+            || (request.resource.data.displayName is string
+                && request.resource.data.displayName.size() <= 80));
+
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['displayName', 'bio', 'preferences', 'updatedAt'])
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.bio is string
+        && request.resource.data.bio.size() <= 280
+        && (!('displayName' in request.resource.data)
+            || request.resource.data.displayName == null
+            || (request.resource.data.displayName is string
+                && request.resource.data.displayName.size() <= 80));
+
+      // Profiles are archived, never hard-deleted by a client.
+      allow delete: if false;
+
+      // ---- Conversations ---------------------------------------------------
+      match /conversations/{conversationId} {
+        allow read: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'title', 'model', 'messageCount', 'lastMessagePreview', 'createdAt', 'updatedAt'
+          ])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 120
+          && request.resource.data.model is string;
+
+        allow update: if isOwner(uid)
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['title', 'updatedAt'])
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 120;
+
+        allow delete: if isOwner(uid);
+
+        // ---- Messages -------------------------------------------------------
+        match /messages/{messageId} {
+          allow read: if isOwner(uid);
+
+          // Clients may append their own user turns only. Assistant turns are
+          // written by the server (Admin SDK bypasses these rules).
+          allow create: if isOwner(uid)
+            && request.resource.data.keys().hasOnly([
+              'role', 'text', 'model', 'tokens', 'createdAt'
+            ])
+            && request.resource.data.role == 'user'
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 8000;
+
+          allow update: if false;
+          allow delete: if isOwner(uid);
+        }
+      }
+
+      // ---- Server-owned usage counters -------------------------------------
+      match /usage/{month} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    // ---- Rate limit buckets: server only ------------------------------------
+    match /rateLimits/{bucketId} {
+      allow read, write: if false;
+    }
+
+    // Default deny for anything not matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,45 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+dist/
+dist-ssr/
+lib/
+*.tsbuildinfo
+
+# environment & secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.service-account*.json
+serviceAccount*.json
+*serviceAccountKey*.json
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# firebase local state
+.firebase/
+firebase.json.local
+.firebaserc
+
+# editors / os
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# test & coverage
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# misc
+*.log
+tmp/
+temp/

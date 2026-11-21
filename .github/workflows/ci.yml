@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install root tooling
+        run: npm ci
+
+      - name: Install apps/web
+        run: npm ci --prefix apps/web
+
+      - name: Install functions
+        run: npm ci --prefix functions
+
+      - name: Secret scan
+        run: npm run check:secrets
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (functions + web)
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  rules:
+    name: Firestore rules + emulator smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix apps/web
+          npm ci --prefix functions
+
+      - name: Rules tests
+        run: npm run test:rules
+
+      - name: Emulator smoke (mock AI)
+        env:
+          AI_MOCK_MODE: 'true'
+        run: npm run test:emulator
