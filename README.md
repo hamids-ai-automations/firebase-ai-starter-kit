@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/hamids-ai-automations/firebase-ai-starter-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/hamids-ai-automations/firebase-ai-starter-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node 20.19+](https://img.shields.io/badge/node-20.19%2B%20%7C%2022.x-brightgreen.svg)](package.json)
+[![Node 22+](https://img.shields.io/badge/node-22%2B%20%7C%2024.x-brightgreen.svg)](package.json)
 
 A production-minded starter kit for building **secure, server-side Gemini AI features on Firebase**.
 It ships a working React demo, hardened Firestore rules, reusable Cloud Functions, strict input
@@ -172,7 +172,7 @@ emulator; the AI responses visible on it come from `AI_MOCK_MODE=true`, not a bi
 
 ## 7. Prerequisites
 
-- Node.js **22.x** (the Functions runtime; Node 20.19+ also works for the tooling) and npm 10+
+- Node.js **22.x or 24.x** (the Functions runtime is Node 22) and npm 10+
 - Java **21** for the Firestore emulator
 - A Firebase project on the Blaze plan (Cloud Functions v2 requires it)
 - A Gemini API key from Google AI Studio
