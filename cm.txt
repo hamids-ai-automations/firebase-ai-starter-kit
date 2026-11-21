@@ -1,6 +1,0 @@
-fix: align CI runtime with current deps and build functions before smoke
-
-- CI matrix 22/24; engines >=22 (current @firebase/ai requires it).
-- Add pretest:emulator build so the Functions emulator has lib/ on a
-  clean clone (callables returned 404 without it).
-- README/requirements updated accordingly.

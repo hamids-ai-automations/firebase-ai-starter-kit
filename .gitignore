@@ -49,3 +49,7 @@ temp/
 temp_msg.txt
 m2.txt
 jobs.json
+
+# scratch
+cm.txt
+*.scratch
